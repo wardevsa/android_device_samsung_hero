@@ -19,5 +19,5 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(INSTALLED_KERNEL_TARGET) $(my_
 	$(hide) echo -n "SEANDROIDENFORCE" >> $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
 	@echo "Made recovery image: $@"
-	$(hide) tar -C $(PRODUCT_OUT) -H ustar -c recovery.img > $(FLASH_IMAGE_TARGET)
+	$(hide) tar -C $(PRODUCT_OUT) -cf $(FLASH_IMAGE_TARGET) recovery.img
 	@echo "Made Odin flashable recovery tar: $(FLASH_IMAGE_TARGET)"
