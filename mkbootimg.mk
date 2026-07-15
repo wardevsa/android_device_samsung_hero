@@ -1,59 +1,25 @@
 LOCAL_PATH := $(call my-dir)
 
-ifeq ($(strip $(BOARD_KERNEL_SEPARATED_DT)),true)
-ifneq ($(strip $(BOARD_KERNEL_PREBUILT_DT)),true)
-ifeq ($(strip $(BUILD_TINY_ANDROID)),true)
-include device/qcom/common/dtbtool/Android.mk
-endif
+INSTALLED_KERNEL_TARGET := $(TARGET_PREBUILT_KERNEL)
 
-ifeq ($(strip $(TARGET_CUSTOM_DTBTOOL)),)
-DTBTOOL_NAME := dtbToolLineage
-else
-DTBTOOL_NAME := $(TARGET_CUSTOM_DTBTOOL)
-endif
+# Override recovery ramdisk to NOT depend on system root
+recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
+recovery_ramdisk_source := $(TARGET_RECOVERY_ROOT_OUT)
 
-DTBTOOL := $(HOST_OUT_EXECUTABLES)/$(DTBTOOL_NAME)$(HOST_EXECUTABLE_SUFFIX)
+$(recovery_ramdisk): $(INTERNAL_RECOVERY_FILES)
+	@echo "----- Building recovery ramdisk from $(recovery_ramdisk_source) -----"
+	$(hide) $(MKBOOTIMG) --kernel $(INSTALLED_KERNEL_TARGET) --ramdisk "" --cmdline "" --base $(BOARD_KERNEL_BASE) --pagesize $(BOARD_KERNEL_PAGESIZE) -o /dev/null 2>/dev/null || true
+	$(hide) cd $(recovery_ramdisk_source) && find . | cpio --create --format=newc | gzip -9 > $@
 
-INSTALLED_DTIMAGE_TARGET := $(PRODUCT_OUT)/dt.img
-
-ifeq ($(strip $(TARGET_CUSTOM_DTBTOOL)),)
-possible_dtb_dirs = $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/
-else
-possible_dtb_dirs = $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/exynos/ $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts/ $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/
-endif
-
-define build-dtimage-target
-    $(call pretty,"Target dt image: $@")
-    $(hide) for dir in $(possible_dtb_dirs); do \
-        if [ -d "$$dir" ]; then \
-            dtb_dir="$$dir"; \
-            break; \
-        fi; \
-    done; \
-    $(DTBTOOL) $(BOARD_DTBTOOL_ARGS) -o $@ -s $(BOARD_KERNEL_PAGESIZE) -p $(KERNEL_OUT)/scripts/dtc/ "$$dtb_dir";
-    $(hide) chmod a+r $@
-endef
-
-$(INSTALLED_DTIMAGE_TARGET): $(DTBTOOL) $(INSTALLED_KERNEL_TARGET)
-	$(build-dtimage-target)
-	@echo "Made DT image: $@"
-
-.PHONY: dtimage
-dtimage: $(INSTALLED_DTIMAGE_TARGET)
-
-endif
-endif
-
-$(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOTIMAGE_EXTRA_DEPS)
+$(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
 	$(hide) echo -n "SEANDROIDENFORCE" >> $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_BOOTIMAGE_PARTITION_SIZE),raw)
-	@echo "Made boot image: $@"
 
 FLASH_IMAGE_TARGET ?= $(PRODUCT_OUT)/recovery.tar
 
-$(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(recovery_ramdisk) $(recovery_kernel) $(RECOVERYIMAGE_EXTRA_DEPS)
+$(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(recovery_ramdisk)
 	@echo "----- Making recovery image ------"
 	$(hide) $(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@ --id > $(RECOVERYIMAGE_ID_FILE)
 	$(hide) echo -n "SEANDROIDENFORCE" >> $@
