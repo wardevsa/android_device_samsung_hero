@@ -1,15 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
-INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
-
-$(INSTALLED_KERNEL_TARGET): $(TARGET_PREBUILT_KERNEL)
-	@echo "Copying kernel to output"
-	cp $(TARGET_PREBUILT_KERNEL) $@
-	chmod 644 $@
-
 my_recovery_ramdisk := $(PRODUCT_OUT)/my-ramdisk-recovery.img
 $(my_recovery_ramdisk):
-	@echo "Building recovery ramdisk from $(TARGET_RECOVERY_ROOT_OUT)"
 	cd $(TARGET_RECOVERY_ROOT_OUT) && find . | cpio --create --format=newc | gzip -9 > $@
 
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
@@ -22,7 +14,7 @@ FLASH_IMAGE_TARGET ?= $(PRODUCT_OUT)/recovery.tar
 
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(INSTALLED_KERNEL_TARGET) $(my_recovery_ramdisk)
 	@echo "----- Making recovery image ------"
-	$(hide) $(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --ramdisk $(my_recovery_ramdisk) --kernel $(INSTALLED_KERNEL_TARGET) --output $@ --id > $(RECOVERYIMAGE_ID_FILE)
+	$(hide) $(MKBOOTIMG) --kernel $(INSTALLED_KERNEL_TARGET) --ramdisk $(my_recovery_ramdisk) --base $(BOARD_KERNEL_BASE) --pagesize $(BOARD_KERNEL_PAGESIZE) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@ --id > $(RECOVERYIMAGE_ID_FILE)
 	$(hide) echo -n "SEANDROIDENFORCE" >> $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
 	@echo "Made recovery image: $@"
