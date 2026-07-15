@@ -25,6 +25,7 @@ FLASH_IMAGE_TARGET ?= $(PRODUCT_OUT)/recovery.tar
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTIMG) $(INSTALLED_KERNEL_TARGET) $(my_recovery_ramdisk)
 	@echo "----- Making recovery image ------"
 	$(hide) $(MKBOOTIMG) --kernel $(INSTALLED_KERNEL_TARGET) --ramdisk $(my_recovery_ramdisk) --base $(BOARD_KERNEL_BASE) --pagesize $(BOARD_KERNEL_PAGESIZE) $(INTERNAL_MKBOOTIMG_VERSION_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $@
+	$(hide) python3 device/samsung/herolte/fix_samsung_img.py $@ device/samsung/herolte/dt.img $(BOARD_KERNEL_PAGESIZE)
 	$(hide) echo -n "SEANDROIDENFORCE" >> $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
 	@echo "Made recovery image: $@"
