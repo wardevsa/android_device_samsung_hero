@@ -1,7 +1,16 @@
 LOCAL_PATH := $(call my-dir)
 
 my_recovery_ramdisk := $(PRODUCT_OUT)/my-ramdisk-recovery.img
-$(my_recovery_ramdisk):
+
+# Copy TWRP resource files to recovery root
+my_res_stamp := $(TARGET_RECOVERY_ROOT_OUT)/res/.res_copied
+$(my_res_stamp):
+	mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res
+	cp -fr bootable/recovery/gui/devices/common/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/ 2>/dev/null || true
+	cp -fr bootable/recovery/gui/devices/1080x1920/res/* $(TARGET_RECOVERY_ROOT_OUT)/res/ 2>/dev/null || true
+	touch $@
+
+$(my_recovery_ramdisk): $(my_res_stamp)
 	mkdir -p $(dir $@)
 	cd $(TARGET_RECOVERY_ROOT_OUT) && find . | cpio -o -H newc | gzip -9 > $(abspath $@)
 
