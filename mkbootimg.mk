@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 my_recovery_ramdisk := $(PRODUCT_OUT)/my-ramdisk-recovery.img
 $(my_recovery_ramdisk):
 	mkdir -p $(dir $@)
-	cd $(TARGET_RECOVERY_ROOT_OUT) && find . | cpio -o -H newc | gzip -9 > $@
+	cd $(TARGET_RECOVERY_ROOT_OUT) && find . | cpio -o -H newc | gzip -9 > $(abspath $@)
 
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
